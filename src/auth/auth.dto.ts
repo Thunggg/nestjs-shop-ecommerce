@@ -1,5 +1,22 @@
+import { UserStatus } from 'generated/prisma/enums';
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
+
+const UserSchema = z.object({
+  id: z.number(),
+  email: z.string(),
+  name: z.string(),
+  phoneNumber: z.string(),
+  avatar: z.string().nullable(),
+  status: z.enum([UserStatus.ACTIVE, UserStatus.BLOCKED, UserStatus.INACTIVE]),
+  roleId: z.number(),
+  createdById: z.number().nullable(),
+  updatedById: z.number().nullable(),
+  deletedById: z.number().nullable(),
+  deletedAt: z.date().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
 
 const RegisterBodySchema = z
   .object({
@@ -21,3 +38,5 @@ const RegisterBodySchema = z
   });
 
 export class RegisterBodyDTO extends createZodDto(RegisterBodySchema) {}
+
+export class RegisterResponseDTO extends createZodDto(UserSchema) {}
