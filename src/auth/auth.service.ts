@@ -6,6 +6,7 @@ import {
 import { PrismaClientValidationError } from '@prisma/client/runtime/client';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { PrismaService } from 'src/shared/services/prisma.service';
+import { RegisterBodyDTO } from './auth.dto';
 import { RoleService } from './roles.service';
 
 @Injectable()
@@ -16,7 +17,7 @@ export class AuthService {
     private readonly roleService: RoleService,
   ) {}
 
-  async register(body: any) {
+  async register(body: RegisterBodyDTO) {
     try {
       const hashPassword = await this.hashingService.hash(body.password);
       const clientRole = await this.roleService.getClientRoleId();
