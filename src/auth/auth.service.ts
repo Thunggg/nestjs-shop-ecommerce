@@ -8,7 +8,7 @@ import {
   PrismaClientValidationError,
 } from '@prisma/client/runtime/client';
 import { HashingService } from 'src/shared/services/hashing.service';
-import { RegisterBodyType } from './auth.model';
+import { RegisterBodyType, SendOTPBodyType } from './auth.model';
 import { AuthRepository } from './auth.repo';
 import { RoleService } from './roles.service';
 
@@ -43,6 +43,25 @@ export class AuthService {
       ) {
         throw new ConflictException('Email is exist');
       }
+      console.log(error);
+
+      throw new InternalServerErrorException('Register failed');
+    }
+  }
+
+  async sendOTP(body: SendOTPBodyType) {
+    try {
+      console.log(body);
+    } catch (error) {
+      if (error instanceof PrismaClientValidationError) {
+        throw new ConflictException('The field not be empty');
+      } else if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Email is exist');
+      }
+      console.log(error);
 
       throw new InternalServerErrorException('Register failed');
     }
