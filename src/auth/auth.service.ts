@@ -3,43 +3,45 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaClientValidationError } from '@prisma/client/runtime/client';
+import {
+  PrismaClientKnownRequestError,
+  PrismaClientValidationError,
+} from '@prisma/client/runtime/client';
 import { HashingService } from 'src/shared/services/hashing.service';
-import { PrismaService } from 'src/shared/services/prisma.service';
-import { RegisterBodyDTO } from './auth.dto';
+import { RegisterBodyType } from './auth.model';
+import { AuthRepository } from './auth.repo';
 import { RoleService } from './roles.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly prismaService: PrismaService,
     private readonly hashingService: HashingService,
     private readonly roleService: RoleService,
+    private readonly authRepository: AuthRepository,
   ) {}
 
-  async register(body: RegisterBodyDTO) {
+  async register(body: RegisterBodyType) {
     try {
       const hashPassword = await this.hashingService.hash(body.password);
       const clientRole = await this.roleService.getClientRoleId();
 
-      const user = await this.prismaService.user.create({
-        data: {
-          email: body.email,
-          password: hashPassword,
-          name: body.name,
-          phoneNumber: body.phoneNumber,
-          roleId: clientRole,
-        },
-        omit: {
-          password: true,
-          totpSecret: true,
-        },
+      const user = await this.authRepository.createUser({
+        email: body.email,
+        name: body.name,
+        password: hashPassword,
+        phoneNumber: body.phoneNumber,
+        roleId: clientRole,
       });
 
       return user;
     } catch (error) {
       if (error instanceof PrismaClientValidationError) {
         throw new ConflictException('The field not be empty');
+      } else if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Email is exist');
       }
 
       throw new InternalServerErrorException('Register failed');
