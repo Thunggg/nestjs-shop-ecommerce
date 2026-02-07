@@ -13,6 +13,7 @@ import envConfig from 'src/shared/config';
 import { TypeOfVerificationCode } from 'src/shared/constants/auth.constant';
 import { generateOTP } from 'src/shared/helper';
 import { ShareUserRepository } from 'src/shared/repositories/share-user.repo';
+import { EmailService } from 'src/shared/services/email.service';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { RegisterBodyType, SendOTPBodyType } from './auth.model';
 import { AuthRepository } from './auth.repo';
@@ -23,6 +24,7 @@ export class AuthService {
   constructor(
     private readonly hashingService: HashingService,
     private readonly roleService: RoleService,
+    private readonly emailService: EmailService,
     private readonly authRepository: AuthRepository,
     private readonly shareUserRepository: ShareUserRepository,
   ) {}
@@ -97,6 +99,18 @@ export class AuthService {
         type: body.type,
         expiresAt: addMilliseconds(new Date(), ms(envConfig.OTP_EXPIRES_IN)),
       });
+
+      const { error } = await this.emailService.sendOTP({
+        code: code,
+        email: body.email,
+      });
+
+      if (error) {
+        throw new UnprocessableEntityException({
+          message: 'Send otp unsuccess',
+          path: 'code',
+        });
+      }
 
       return res;
     } catch (error) {
