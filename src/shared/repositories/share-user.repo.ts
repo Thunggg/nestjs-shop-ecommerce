@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from 'generated/prisma/browser';
 import { PrismaService } from 'src/shared/services/prisma.service';
 import { UserType } from '../models/shared-user.model';
 
@@ -8,10 +7,10 @@ export class ShareUserRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
   async findUnique(
-    where: Prisma.UserWhereUniqueInput,
+    value: { email: string } | { id: number },
   ): Promise<UserType | null> {
     return this.prismaService.user.findUnique({
-      where,
+      where: value,
     });
   }
 }

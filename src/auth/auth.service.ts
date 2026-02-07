@@ -1,7 +1,6 @@
 import {
   ConflictException,
   Injectable,
-  InternalServerErrorException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
@@ -11,6 +10,7 @@ import {
 import { addMilliseconds } from 'date-fns';
 import ms from 'ms';
 import envConfig from 'src/shared/config';
+import { TypeOfVerificationCode } from 'src/shared/constants/auth.constant';
 import { generateOTP } from 'src/shared/helper';
 import { ShareUserRepository } from 'src/shared/repositories/share-user.repo';
 import { HashingService } from 'src/shared/services/hashing.service';
@@ -29,6 +29,27 @@ export class AuthService {
 
   async register(body: RegisterBodyType) {
     try {
+      const verifycationOTP =
+        await this.authRepository.findUniqueVerifycationCode({
+          code: body.code,
+          email: body.email,
+          type: TypeOfVerificationCode.REGISTER,
+        });
+
+      if (!verifycationOTP) {
+        throw new UnprocessableEntityException({
+          message: 'OTP is not valid',
+          path: 'code',
+        });
+      }
+
+      if (verifycationOTP.expiresAt < new Date()) {
+        throw new UnprocessableEntityException({
+          message: 'OTP is expired',
+          path: 'code',
+        });
+      }
+
       const hashPassword = await this.hashingService.hash(body.password);
       const clientRole = await this.roleService.getClientRoleId();
 
@@ -52,7 +73,7 @@ export class AuthService {
       }
       console.log(error);
 
-      throw new InternalServerErrorException('Register failed');
+      throw error;
     }
   }
 
@@ -89,7 +110,7 @@ export class AuthService {
       }
       console.log(error);
 
-      throw new InternalServerErrorException('Register failed');
+      throw error;
     }
   }
 }

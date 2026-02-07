@@ -10,3 +10,6 @@ export const TypeOfVerificationCode = {
   LOGIN: 'LOGIN',
   DISABLE_2FA: 'DISABLE_2FA',
 } as const;
+
+export type TypeOfVerificationCode =
+  (typeof TypeOfVerificationCode)[keyof typeof TypeOfVerificationCode];
