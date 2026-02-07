@@ -2,11 +2,17 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
 } from '@prisma/client/runtime/client';
+import { addMilliseconds } from 'date-fns';
+import ms from 'ms';
+import envConfig from 'src/shared/config';
+import { generateOTP } from 'src/shared/helper';
+import { ShareUserRepository } from 'src/shared/repositories/share-user.repo';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { RegisterBodyType, SendOTPBodyType } from './auth.model';
 import { AuthRepository } from './auth.repo';
@@ -18,6 +24,7 @@ export class AuthService {
     private readonly hashingService: HashingService,
     private readonly roleService: RoleService,
     private readonly authRepository: AuthRepository,
+    private readonly shareUserRepository: ShareUserRepository,
   ) {}
 
   async register(body: RegisterBodyType) {
@@ -41,7 +48,7 @@ export class AuthService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Email is exist');
+        throw new UnprocessableEntityException('Email is exist');
       }
       console.log(error);
 
@@ -51,7 +58,26 @@ export class AuthService {
 
   async sendOTP(body: SendOTPBodyType) {
     try {
-      console.log(body);
+      const user = await this.shareUserRepository.findUnique({
+        email: body.email,
+      });
+
+      if (user) {
+        throw new UnprocessableEntityException({
+          message: 'Email is exist!',
+          path: 'email',
+        });
+      }
+
+      const code = generateOTP();
+      const res = await this.authRepository.createVerifycationCode({
+        email: body.email,
+        code,
+        type: body.type,
+        expiresAt: addMilliseconds(new Date(), ms(envConfig.OTP_EXPIRES_IN)),
+      });
+
+      return res;
     } catch (error) {
       if (error instanceof PrismaClientValidationError) {
         throw new ConflictException('The field not be empty');
@@ -59,7 +85,7 @@ export class AuthService {
         error instanceof PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Email is exist');
+        throw new UnprocessableEntityException('Email is not exist');
       }
       console.log(error);
 
