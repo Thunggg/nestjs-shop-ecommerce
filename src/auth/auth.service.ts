@@ -259,4 +259,34 @@ export class AuthService {
       throw new UnauthorizedException();
     }
   }
+
+  async logout(refreshToken: string) {
+    try {
+      // 1. kiểm tra refreshToken có hợp lệ hay không
+      await this.tokenService.verifyRefreshToken(refreshToken);
+
+      // 2. Xóa refreshToken trong database
+      const deletedRefreshToken = await this.authRepository.deleteRefreshToken({
+        token: refreshToken,
+      });
+
+      console.log(deletedRefreshToken);
+
+      // 3. Cập nhật device là đã logout
+      await this.authRepository.updateDevice(deletedRefreshToken.deviceId, {
+        isActive: false,
+      });
+
+      return { message: 'logout successfully' };
+    } catch (error) {
+      if (
+        error instanceof PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new UnauthorizedException('Refresh token has been revoke');
+      }
+
+      throw new UnauthorizedException();
+    }
+  }
 }

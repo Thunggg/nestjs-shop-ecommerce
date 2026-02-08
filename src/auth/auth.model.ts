@@ -113,13 +113,11 @@ export const RefreshTokenBodySchema = z
   })
   .strict();
 
-export const LogoutBodySchema = z.object({
-  token: z.string(),
-  userId: z.number(),
-  deviceId: z.number(),
-  expiresAt: z.date(),
-  createdAt: z.date(),
-});
+export const LogoutBodySchema = z
+  .object({
+    refreshToken: z.string(),
+  })
+  .strict();
 
 /* =========================
    TYPES (ALL AT BOTTOM)
