@@ -126,7 +126,7 @@ export class AuthService {
         });
       }
 
-      return res;
+      return { message: 'Send otp success' };
     } catch (error) {
       if (error instanceof PrismaClientValidationError) {
         throw new ConflictException('The field not be empty');
@@ -136,8 +136,6 @@ export class AuthService {
       ) {
         throw new UnprocessableEntityException('Email is not exist');
       }
-      console.log(error);
-
       throw error;
     }
   }

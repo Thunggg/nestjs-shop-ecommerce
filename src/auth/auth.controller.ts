@@ -1,5 +1,6 @@
 import { Body, Controller, Ip, Post } from '@nestjs/common';
 import { ZodSerializerDto } from 'nestjs-zod';
+import { IsPublic } from 'src/shared/decorators/auth.decorator';
 import { UserAgent } from 'src/shared/decorators/user-agent.decorator';
 import { MessageResDTO } from 'src/shared/dtos/response.dto';
 import {
@@ -19,17 +20,21 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @IsPublic()
   @ZodSerializerDto(RegisterResponseDTO)
   async register(@Body() body: RegisterBodyDTO) {
     return await this.authService.register(body);
   }
 
   @Post('otp')
+  @IsPublic()
+  @ZodSerializerDto(MessageResDTO)
   async sendOTP(@Body() body: SendOTPBodyDTO) {
     return await this.authService.sendOTP(body);
   }
 
   @Post('login')
+  @IsPublic()
   @ZodSerializerDto(LoginResDTO)
   async login(
     @Body() body: LoginBodyDTO & { userAgent: string; ip: string },
@@ -44,6 +49,7 @@ export class AuthController {
   }
 
   @Post('refresh-token')
+  @IsPublic()
   @ZodSerializerDto(RefreshTokenResDTO)
   async refreshToken(
     @Body() body: RefreshTokenBodyDTO & { userAgent: string; ip: string },
