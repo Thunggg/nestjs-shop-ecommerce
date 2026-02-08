@@ -3,6 +3,7 @@ import { VerificationCodeType } from 'generated/prisma/enums';
 import { PrismaService } from 'src/shared/services/prisma.service';
 import {
   DeviceType,
+  RefreshTokenType,
   RegisterBodyType,
   RoleType,
   UserType,
@@ -100,6 +101,40 @@ export class AuthRepository {
       include: {
         role: true,
       },
+    });
+  }
+
+  async findUniqueRefreshTokenIncludeUserRole(uniqueObject: {
+    token: string;
+  }): Promise<
+    (RefreshTokenType & { user: UserType & { role: RoleType } }) | null
+  > {
+    return this.prismaService.refreshToken.findUnique({
+      where: uniqueObject,
+      include: {
+        user: {
+          include: {
+            role: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateDevice(deviceId: number, data: Partial<DeviceType>) {
+    return await this.prismaService.device.update({
+      where: {
+        id: deviceId,
+      },
+      data,
+    });
+  }
+
+  async deleteRefreshToken(uniqueObject: {
+    token: string;
+  }): Promise<RefreshTokenType> {
+    return this.prismaService.refreshToken.delete({
+      where: uniqueObject,
     });
   }
 }

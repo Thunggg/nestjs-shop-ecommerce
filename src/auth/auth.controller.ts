@@ -4,6 +4,8 @@ import { UserAgent } from 'src/shared/decorators/user-agent.decorator';
 import {
   LoginBodyDTO,
   LoginResDTO,
+  RefreshTokenBodyDTO,
+  RefreshTokenResDTO,
   RegisterBodyDTO,
   RegisterResponseDTO,
   SendOTPBodyDTO,
@@ -33,6 +35,20 @@ export class AuthController {
     @Ip() ip: string,
   ) {
     return await this.authService.login({
+      ...body,
+      userAgent,
+      ip,
+    });
+  }
+
+  @Post('refresh-token')
+  @ZodSerializerDto(RefreshTokenResDTO)
+  async refreshToken(
+    @Body() body: RefreshTokenBodyDTO & { userAgent: string; ip: string },
+    @UserAgent() userAgent: string,
+    @Ip() ip: string,
+  ) {
+    return await this.authService.refreshToken({
       ...body,
       userAgent,
       ip,

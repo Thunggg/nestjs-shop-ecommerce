@@ -1,6 +1,8 @@
 import {
   ConflictException,
+  HttpException,
   Injectable,
+  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
@@ -18,7 +20,12 @@ import { EmailService } from 'src/shared/services/email.service';
 import { HashingService } from 'src/shared/services/hashing.service';
 import { TokenService } from 'src/shared/services/token.service';
 import { AccessTokenPayloadCreate } from 'src/shared/types/jwt.type';
-import { LoginBodyType, RegisterBodyType, SendOTPBodyType } from './auth.model';
+import {
+  LoginBodyType,
+  RefreshTokenBodyType,
+  RegisterBodyType,
+  SendOTPBodyType,
+} from './auth.model';
 import { AuthRepository } from './auth.repo';
 import { RoleService } from './roles.service';
 
@@ -195,5 +202,61 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  async refreshToken(
+    body: RefreshTokenBodyType & { userAgent: string; ip: string },
+  ) {
+    try {
+      // 1. Kiểm tra refreshToken có hợp lệ không
+      const { userId } = await this.tokenService.verifyRefreshToken(
+        body.refreshToken,
+      );
+
+      // 2. kiểm tra refreshtoken có tồn tại trong db hay ko
+      const refreshTokenIndb =
+        await this.authRepository.findUniqueRefreshTokenIncludeUserRole({
+          token: body.refreshToken,
+        });
+
+      if (!refreshTokenIndb) {
+        // trường hợp đã refresh rồi thì thống báo cho user biết
+        // refresh token bị đánh cắp
+        throw new UnauthorizedException('Refresh token has been revoked');
+      }
+
+      const {
+        deviceId,
+        user: { roleId, name: roleName },
+      } = refreshTokenIndb;
+
+      // 3. cập nhật device
+      // 4. xóa refreshToken cũ
+      // 5. tạo accessToken và refreshToken mới
+      const [, , tokens] = await Promise.all([
+        this.authRepository.updateDevice(deviceId, {
+          ip: body.ip,
+          userAgent: body.userAgent,
+        }),
+
+        this.authRepository.deleteRefreshToken({
+          token: body.refreshToken,
+        }),
+
+        this.generateToken({
+          userId,
+          roleId,
+          roleName,
+          deviceId,
+        }),
+      ]);
+
+      return tokens;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new UnauthorizedException();
+    }
   }
 }
