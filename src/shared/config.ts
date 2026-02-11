@@ -23,6 +23,10 @@ const ConfigSchema = z.object({
   OTP_EXPIRES_IN: z.string(),
   RESEND_API_KEY: z.string(),
   SECRET_KEY: z.string(),
+  GOOGLE_CLIENT_ID: z.string(),
+  GOOGLE_CLIENT_SECRET: z.string(),
+  GOOGLE_REDIRECT_URI: z.string(),
+  GOOGLE_CLIENT_REDIRECT_URI: z.string(),
 });
 
 const configServer = ConfigSchema.safeParse(process.env);
