@@ -9,6 +9,7 @@ import {
   UserType,
   VerifyCationCodeType,
 } from './auth.model';
+import { TypeOfVerificationCode } from 'src/shared/constants/auth.constant';
 
 @Injectable()
 export class AuthRepository {
@@ -151,6 +152,28 @@ export class AuthRepository {
   }): Promise<RefreshTokenType> {
     return this.prismaService.refreshToken.delete({
       where: uniqueObject,
+    });
+  }
+
+  async updateUser(
+    where: { id: number } | { email: string },
+    data: Partial<Omit<UserType, 'id'>>,
+  ): Promise<UserType> {
+    return this.prismaService.user.update({
+      where,
+      data,
+    });
+  }
+
+  async deleteVerifycationCode(uniqueValue: {
+    email: string;
+    code: string;
+    type: TypeOfVerificationCode;
+  }) {
+    return this.prismaService.verificationCode.delete({
+      where: {
+        email_code_type: uniqueValue,
+      },
     });
   }
 }

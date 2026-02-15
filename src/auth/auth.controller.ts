@@ -4,6 +4,7 @@ import { IsPublic } from 'src/shared/decorators/auth.decorator';
 import { UserAgent } from 'src/shared/decorators/user-agent.decorator';
 import { MessageResDTO } from 'src/shared/dtos/response.dto';
 import {
+  ForgotPasswordBodyDTO,
   GetAuthorizationUrlResDTO,
   LoginBodyDTO,
   LoginResDTO,
@@ -104,5 +105,12 @@ export class AuthController {
         `${envConfig.GOOGLE_CLIENT_REDIRECT_URI}?errorMessage=${message}`,
       );
     }
+  }
+
+  @Post('forgot-password')
+  @IsPublic()
+  @ZodSerializerDto(MessageResDTO)
+  async forgotPassword(@Body() body: ForgotPasswordBodyDTO) {
+    return await this.authService.forgotPassword(body);
   }
 }

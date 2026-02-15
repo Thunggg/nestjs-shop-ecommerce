@@ -127,6 +127,25 @@ export const GoogleAuthStateSchema = DeviceSchema.pick({
 export const GetAuthorizationUrlResSchema = z.object({
   url: z.url(),
 });
+
+export const ForgotPasswordBodySchema = z
+  .object({
+    email: z.email(),
+    code: z.string().length(6),
+    newPassword: z.string().min(6).max(100),
+    confirmPassword: z.string().min(6).max(100),
+  })
+  .strict()
+  .superRefine(({ newPassword, confirmPassword }, ctx) => {
+    if (newPassword !== confirmPassword) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Password and confirm password must match',
+        path: ['confirmPassword'],
+      });
+    }
+  });
+
 /* =========================
    TYPES (ALL AT BOTTOM)
 ========================= */
@@ -155,3 +174,5 @@ export type GoogleAuthStateType = z.infer<typeof GoogleAuthStateSchema>;
 export type GetAuthorizationUrlResSType = z.infer<
   typeof GetAuthorizationUrlResSchema
 >;
+
+export type ForgotPasswordBodyType = z.infer<typeof ForgotPasswordBodySchema>;
